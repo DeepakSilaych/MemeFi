@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Table,
   TableBody,
@@ -11,149 +10,222 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
+  Avatar,
+  Stack,
+  Chip,
   ToggleButtonGroup,
   ToggleButton,
-  useTheme,
-  CircularProgress,
+  Card,
 } from '@mui/material';
-import { getLeaderboard } from '../services/api';
-import { LeaderboardEntry } from '../types';
+import { motion } from 'framer-motion';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useWallet } from '../context/WalletContext';
 
-type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'all';
+const MotionCard = motion(Card);
+
+// Mock data - replace with real API data
+const mockLeaderboardData = [
+  {
+    id: 1,
+    rank: 1,
+    address: '0x1234...5678',
+    points: 15000,
+    trades: 150,
+    winRate: '68%',
+    volume: '$250,000',
+    badge: 'diamond',
+  },
+  {
+    id: 2,
+    rank: 2,
+    address: '0x8765...4321',
+    points: 12000,
+    trades: 120,
+    winRate: '65%',
+    volume: '$180,000',
+    badge: 'gold',
+  },
+  {
+    id: 3,
+    rank: 3,
+    address: '0x9876...1234',
+    points: 10000,
+    trades: 100,
+    winRate: '62%',
+    volume: '$150,000',
+    badge: 'gold',
+  },
+  // Add more mock data...
+];
+
+const timeRanges = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'all-time', label: 'All Time' },
+];
 
 export default function LeaderboardPage() {
-  const theme = useTheme();
   const { address } = useWallet();
-  const [timeframe, setTimeframe] = useState<TimeFrame>('weekly');
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('weekly');
 
-  useEffect(() => {
-    loadLeaderboard();
-  }, [timeframe]);
-
-  const loadLeaderboard = async () => {
-    try {
-      setLoading(true);
-      const data = await getLeaderboard(timeframe);
-      setEntries(data);
-    } catch (error) {
-      console.error('Error loading leaderboard:', error);
-    } finally {
-      setLoading(false);
+  const getBadgeColor = (badge: string) => {
+    switch (badge) {
+      case 'diamond':
+        return '#B9F2FF';
+      case 'gold':
+        return '#FFD700';
+      case 'silver':
+        return '#C0C0C0';
+      default:
+        return '#CD7F32';
     }
   };
 
-  const formatAddress = (addr: string) => {
-    if (addr === address) {
-      return 'You';
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+      case 2:
+        return 'linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%)';
+      case 3:
+        return 'linear-gradient(135deg, #CD7F32 0%, #B87333 100%)';
+      default:
+        return undefined;
     }
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleTimeRangeChange = (event: React.MouseEvent<HTMLElement>, newTimeRange: string) => {
+    if (newTimeRange !== null) {
+      setTimeRange(newTimeRange);
+    }
+  };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-          <Typography variant="h4">Leaderboard</Typography>
-          <ToggleButtonGroup
-            value={timeframe}
-            exclusive
-            onChange={(_, value) => value && setTimeframe(value)}
-            aria-label="timeframe"
-          >
-            <ToggleButton value="daily">Daily</ToggleButton>
-            <ToggleButton value="weekly">Weekly</ToggleButton>
-            <ToggleButton value="monthly">Monthly</ToggleButton>
-            <ToggleButton value="all">All Time</ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
-
-        <TableContainer
-          component={Paper}
+    <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+        <Typography variant="h4" className="gradient-text">
+          Leaderboard
+        </Typography>
+        <ToggleButtonGroup
+          value={timeRange}
+          exclusive
+          onChange={handleTimeRangeChange}
+          aria-label="time range"
           sx={{
-            background: theme.palette.background.paper,
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${theme.palette.primary.main}25`,
+            '& .MuiToggleButton-root': {
+              color: 'text.secondary',
+              borderColor: 'rgba(255,255,255,0.1)',
+              '&.Mui-selected': {
+                color: 'primary.main',
+                background: 'rgba(255,255,255,0.05)',
+              },
+              '&:hover': {
+                background: 'rgba(255,255,255,0.05)',
+              },
+            },
           }}
         >
+          {timeRanges.map((range) => (
+            <ToggleButton key={range.value} value={range.value}>
+              {range.label}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      </Stack>
+
+      <MotionCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="glass"
+      >
+        <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Rank</TableCell>
-                <TableCell>Address</TableCell>
+                <TableCell>Trader</TableCell>
                 <TableCell align="right">Points</TableCell>
                 <TableCell align="right">Trades</TableCell>
                 <TableCell align="right">Win Rate</TableCell>
+                <TableCell align="right">Volume</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {entries.map((entry) => (
-                <TableRow
-                  key={entry.address}
-                  sx={{
-                    backgroundColor:
-                      entry.address === address
-                        ? `${theme.palette.primary.main}10`
-                        : 'inherit',
-                    '&:hover': {
-                      backgroundColor: `${theme.palette.primary.main}20`,
-                    },
-                  }}
-                >
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {entry.rank <= 3 ? (
-                        <Typography
-                          component="span"
+              {mockLeaderboardData.map((trader) => {
+                const isCurrentUser = address && trader.address.toLowerCase() === address.toLowerCase();
+                return (
+                  <TableRow
+                    key={trader.id}
+                    sx={{
+                      background: isCurrentUser ? 'rgba(0, 246, 255, 0.05)' : undefined,
+                      '&:hover': { background: 'rgba(255,255,255,0.05)' },
+                    }}
+                  >
+                    <TableCell>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Avatar
                           sx={{
-                            color:
-                              entry.rank === 1
-                                ? '#FFD700'
-                                : entry.rank === 2
-                                ? '#C0C0C0'
-                                : '#CD7F32',
-                            fontWeight: 'bold',
-                            fontSize: '1.2rem',
+                            width: 32,
+                            height: 32,
+                            background: getRankColor(trader.rank) || 'rgba(255,255,255,0.1)',
+                            fontWeight: 600,
                           }}
                         >
-                          #{entry.rank}
-                        </Typography>
-                      ) : (
-                        `#${entry.rank}`
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{formatAddress(entry.address)}</TableCell>
-                  <TableCell align="right">
-                    {entry.points.toLocaleString()}
-                  </TableCell>
-                  <TableCell align="right">
-                    {entry.trades.toLocaleString()}
-                  </TableCell>
-                  <TableCell align="right">{entry.winRate.toFixed(1)}%</TableCell>
-                </TableRow>
-              ))}
+                          {trader.rank}
+                        </Avatar>
+                        <Chip
+                          size="small"
+                          label={trader.badge.toUpperCase()}
+                          sx={{
+                            backgroundColor: 'rgba(0,0,0,0.2)',
+                            color: getBadgeColor(trader.badge),
+                            borderColor: getBadgeColor(trader.badge),
+                            border: '1px solid',
+                          }}
+                        />
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        {trader.address}
+                        {isCurrentUser && (
+                          <Chip
+                            size="small"
+                            label="YOU"
+                            color="primary"
+                            sx={{ height: 20 }}
+                          />
+                        )}
+                      </Stack>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography color="primary" fontWeight={500}>
+                        {trader.points.toLocaleString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">{trader.trades}</TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
+                        <TrendingUpIcon
+                          sx={{
+                            fontSize: 16,
+                            color: parseFloat(trader.winRate) >= 50 ? 'success.main' : 'error.main',
+                          }}
+                        />
+                        {trader.winRate}
+                      </Stack>
+                    </TableCell>
+                    <TableCell align="right">{trader.volume}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
-
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Rankings are updated every hour. Keep trading to climb the leaderboard!
-          </Typography>
-        </Box>
-      </Box>
-    </Container>
+      </MotionCard>
+    </Box>
   );
 }
