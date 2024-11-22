@@ -65,54 +65,100 @@ const timeframes = [
   {
     duration: '5 Minutes',
     description: 'Quick trades for active traders',
-    multiplier: '1.8x',
+    multiplier: '2.5x',
     risk: 'High',
     details: [
-      'Best for scalping strategies',
-      'Requires active monitoring',
-      'Higher potential returns',
-      'Increased market volatility',
+      'Best for scalping and momentum trading',
+      'Requires constant market monitoring',
+      'Suitable for volatile market conditions',
+      'Higher potential returns but increased risk',
+      'Perfect for news-based trading',
+    ],
+    color: '#FF6B6B',
+  },
+  {
+    duration: '15 Minutes',
+    description: 'Short-term position taking',
+    multiplier: '2.2x',
+    risk: 'Medium-High',
+    details: [
+      'Ideal for short-term trend following',
+      'Allows time for pattern confirmation',
+      'Good for range trading strategies',
+      'Balance of risk and opportunity',
+      'Popular among day traders',
     ],
     color: '#4ECDC4',
   },
   {
-    duration: '15 Minutes',
-    description: 'Balanced short-term positions',
-    multiplier: '2.2x',
-    risk: 'Medium-High',
+    duration: '30 Minutes',
+    description: 'Medium-term trading window',
+    multiplier: '2.0x',
+    risk: 'Medium',
     details: [
-      'Popular among day traders',
-      'Good for trend following',
-      'Moderate market noise',
-      'Better price action signals',
+      'Suitable for trend continuation trades',
+      'Time for thorough technical analysis',
+      'Reduced impact of market noise',
+      'Better for systematic trading',
+      'Good for breakout strategies',
     ],
-    color: '#FFD93D',
+    color: '#45B7D1',
   },
   {
     duration: '1 Hour',
-    description: 'Extended trading window',
-    multiplier: '2.5x',
-    risk: 'Medium',
+    description: 'Standard trading timeframe',
+    multiplier: '1.8x',
+    risk: 'Medium-Low',
     details: [
-      'Suitable for swing trading',
-      'Reduced market noise',
+      'Popular among professional traders',
       'Clear trend identification',
-      'Lower monitoring frequency',
+      'Ideal for swing trading setups',
+      'Good for position building',
+      'Balanced risk-reward ratio',
     ],
-    color: '#6C63FF',
+    color: '#96CEB4',
   },
   {
     duration: '4 Hours',
-    description: 'Long-term position taking',
-    multiplier: '3.0x',
+    description: 'Extended market analysis',
+    multiplier: '1.5x',
     risk: 'Low',
     details: [
-      'Strategic position taking',
-      'Minimal market noise',
+      'Perfect for major trend trades',
+      'Reduced daily monitoring needed',
       'Higher probability setups',
-      'Best for major trends',
+      'Great for position trading',
+      'Lower trading frequency required',
     ],
-    color: '#FF6B6B',
+    color: '#88D8B0',
+  },
+  {
+    duration: '1 Day',
+    description: 'Daily trend capturing',
+    multiplier: '1.3x',
+    risk: 'Very Low',
+    details: [
+      'Capture daily market cycles',
+      'Best for strong trend following',
+      'Minimal time commitment needed',
+      'Ideal for part-time traders',
+      'Focus on major support/resistance',
+    ],
+    color: '#7B6CF6',
+  },
+  {
+    duration: '1 Week',
+    description: 'Long-term position taking',
+    multiplier: '1.2x',
+    risk: 'Ultra Low',
+    details: [
+      'Strategic position building',
+      'Perfect for macro trends',
+      'Lowest monitoring requirement',
+      'Best for portfolio strategies',
+      'Maximum trend capture potential',
+    ],
+    color: '#6C5CE7',
   },
 ];
 
@@ -120,25 +166,58 @@ const features = [
   {
     id: 'amount',
     title: 'Position Sizing',
-    description: 'Learn how to size your positions effectively',
+    description: 'Master the art of position sizing',
     icon: Layers,
     tips: [
-      'Start with 1-2% of your portfolio per trade',
-      'Consider potential losses before entering',
-      'Use the position calculator for optimal sizing',
-      'Scale positions based on conviction',
+      'Start with 1-2% of portfolio per trade',
+      'Scale position size with confidence',
+      'Consider volatility when sizing',
+      'Use leverage appropriately',
+      'Always plan your exit strategy',
+    ],
+    advanced: [
+      'Kelly Criterion for optimal sizing',
+      'Risk-adjusted position scaling',
+      'Correlation-based portfolio sizing',
+      'Dynamic risk management',
+    ],
+  },
+  {
+    id: 'analysis',
+    title: 'Market Analysis',
+    description: 'Tools and techniques for market analysis',
+    icon: Analytics,
+    tips: [
+      'Combine multiple timeframes',
+      'Use volume for confirmation',
+      'Watch key support/resistance',
+      'Monitor market sentiment',
+      'Track correlated assets',
+    ],
+    advanced: [
+      'Advanced chart patterns',
+      'Momentum indicators',
+      'Volatility analysis',
+      'Order flow reading',
     ],
   },
   {
     id: 'settlement',
     title: 'Settlement & Execution',
-    description: 'Understanding how trades are executed and settled',
+    description: 'Understanding trade mechanics',
     icon: AccountBalance,
     tips: [
-      'Positions settle automatically at expiry',
-      'Profits are instantly credited to your wallet',
-      'Execution price is based on oracle feeds',
-      'Keep enough INJ for gas fees',
+      'Automatic position settlement',
+      'Oracle-based price feeds',
+      'Instant profit distribution',
+      'Gas fee optimization',
+      'Slippage protection',
+    ],
+    advanced: [
+      'Settlement mechanisms',
+      'Oracle redundancy',
+      'MEV protection',
+      'Network optimization',
     ],
   },
 ];
@@ -367,6 +446,23 @@ export default function TradingMechanicsPage() {
                         </ListItem>
                       ))}
                     </List>
+                    {feature.advanced && (
+                      <Box sx={{ mt: 4 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                          Advanced Tips
+                        </Typography>
+                        <List dense>
+                          {feature.advanced.map((tip, idx) => (
+                            <ListItem key={idx}>
+                              <ListItemIcon>
+                                <Speed sx={{ color: theme.palette.success.main, fontSize: 16 }} />
+                              </ListItemIcon>
+                              <ListItemText primary={tip} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Box>
+                    )}
                   </CardContent>
                 </MotionCard>
               </Grid>

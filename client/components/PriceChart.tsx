@@ -20,7 +20,8 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, height = 400 }) => {
     const handleResize = () => {
       if (chartRef.current && chartContainerRef.current) {
         chartRef.current.applyOptions({ 
-          width: chartContainerRef.current.clientWidth 
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight
         });
       }
     };
@@ -29,35 +30,52 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, height = 400 }) => {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: theme.palette.text.secondary,
+        fontFamily: theme.typography.fontFamily,
       },
       width: chartContainerRef.current.clientWidth,
-      height: height,
+      height: chartContainerRef.current.clientHeight,
       grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
+        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
       },
       crosshair: {
-        mode: 0,
+        mode: 1,
         vertLine: {
           color: theme.palette.primary.main,
           width: 1,
           style: 3,
-          labelBackgroundColor: theme.palette.primary.main,
+          labelBackgroundColor: theme.palette.background.paper,
         },
         horzLine: {
           color: theme.palette.primary.main,
           width: 1,
           style: 3,
-          labelBackgroundColor: theme.palette.primary.main,
+          labelBackgroundColor: theme.palette.background.paper,
         },
       },
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
         timeVisible: true,
         secondsVisible: false,
+        barSpacing: 12,
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+      },
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
     });
 
@@ -72,6 +90,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, height = 400 }) => {
     candlestickSeries.setData(data);
 
     window.addEventListener('resize', handleResize);
+    handleResize(); // Initial resize
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -79,17 +98,18 @@ const PriceChart: React.FC<PriceChartProps> = ({ data, height = 400 }) => {
         chartRef.current.remove();
       }
     };
-  }, [theme, height]);
+  }, [theme, height, data]);
 
   return (
     <Box 
       ref={chartContainerRef} 
       sx={{ 
         width: '100%',
-        height: height,
+        height: '100%',
+        minHeight: height,
         '.tv-lightweight-charts': {
-          borderRadius: 2,
-          background: 'rgba(255,255,255,0.03)',
+          borderRadius: 1,
+          background: 'rgba(255,255,255,0.02)',
         }
       }} 
     />

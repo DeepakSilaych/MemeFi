@@ -3,10 +3,14 @@ export interface Token {
   name: string;
   symbol: string;
   price: number;
+  description?: string;
+  imageUrl?: string;
+  totalSupply: number;
   priceChange24h: number;
   volume24h: number;
   marketCap: number;
-  image?: string;
+  trades?: Trade[];
+  liquidityProvisions?: LiquidityProvision[];
 }
 
 export interface Trade {
@@ -40,6 +44,15 @@ export interface LiquidityPool {
     date: string;
     value: number;
   }[];
+}
+
+export interface LiquidityProvision {
+  id: string;
+  userId: string;
+  tokenAmount: number;
+  injAmount: number;
+  shareTokens: number;
+  createdAt: string;
 }
 
 export interface UserStats {

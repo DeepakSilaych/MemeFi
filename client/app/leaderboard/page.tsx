@@ -103,7 +103,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2 }}>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
         <Typography variant="h4" className="gradient-text">
           Leaderboard

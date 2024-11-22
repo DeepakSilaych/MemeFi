@@ -40,12 +40,12 @@ const liquidityBasics = [
   },
   {
     title: 'How Do You Earn?',
-    content: 'Earn a share of trading fees proportional to your pool contribution. The more liquidity you provide, the more fees you can earn.',
+    content: 'Earn a share of trading fees proportional to your pool contribution, with options for auto-compounding to maximize returns. The more liquidity you provide, the more fees you can earn.',
     icon: Paid,
   },
   {
     title: 'Risks and Rewards',
-    content: 'While you earn trading fees, be aware of impermanent loss - when token price changes affect your holdings value.',
+    content: 'While you earn trading fees and can benefit from auto-compounding, be aware of impermanent loss. Our risk-reward indicators help you make informed decisions.',
     icon: MonetizationOn,
   },
 ];
@@ -53,15 +53,23 @@ const liquidityBasics = [
 const faqs = [
   {
     question: 'What is Impermanent Loss?',
-    answer: 'Impermanent loss occurs when the price ratio of your provided tokens changes compared to when you deposited them. This can result in having less value than if you had simply held the tokens.',
+    answer: 'Impermanent loss occurs when the price ratio of your provided tokens changes compared to when you deposited them. Our risk indicators help you monitor and manage this risk.',
   },
   {
     question: 'How are Fees Calculated?',
-    answer: 'Trading fees are typically 0.3% of each trade, distributed proportionally to liquidity providers based on their share of the pool.',
+    answer: 'Trading fees are typically 0.3% of each trade, distributed proportionally to liquidity providers. With auto-compounding enabled, these fees are automatically reinvested daily to maximize your returns.',
+  },
+  {
+    question: 'What is Auto-compounding?',
+    answer: 'Auto-compounding automatically reinvests your earned fees back into the pool daily, allowing you to earn compound interest on your earnings. This can significantly increase your returns compared to manual reinvestment.',
+  },
+  {
+    question: 'How do I track my performance?',
+    answer: 'Our dashboard provides comprehensive metrics including Total Value Locked (TVL), your pool share, current APY, and earned fees. The ROI calculator helps you project potential returns.',
   },
   {
     question: 'Can I Withdraw Anytime?',
-    answer: 'Yes, you can withdraw your liquidity at any time, but consider gas fees and potential impermanent loss before doing so.',
+    answer: 'Yes, you can withdraw your liquidity at any time. The interface provides clear information about your current position value and any accrued rewards.',
   },
   {
     question: 'What Pairs Can I Provide Liquidity For?',
@@ -72,22 +80,22 @@ const faqs = [
 const steps = [
   {
     title: 'Choose a Trading Pair',
-    content: 'Select which tokens you want to provide liquidity for. You need equal values of both tokens.',
+    content: 'Select which tokens you want to provide liquidity for. Review the risk-reward profile and current APY before proceeding.',
     icon: LocalAtm,
   },
   {
-    title: 'Calculate Amounts',
-    content: 'Determine how much of each token to provide. The ratio must match the current pool ratio.',
+    title: 'Set Up Auto-compound',
+    content: 'Choose whether to enable auto-compounding for maximizing returns through daily reinvestment of earned fees.',
     icon: MonetizationOn,
   },
   {
-    title: 'Approve Tokens',
-    content: 'Approve the smart contract to access your tokens. This requires a one-time transaction.',
+    title: 'Calculate Investment',
+    content: 'Use our ROI calculator to estimate potential returns based on your investment amount and time period.',
     icon: CheckCircle,
   },
   {
     title: 'Add Liquidity',
-    content: 'Confirm the transaction to add your tokens to the pool. You\'ll receive LP tokens in return.',
+    content: 'Confirm the transaction to add your tokens to the pool. Monitor your position through our comprehensive dashboard.',
     icon: AccountBalance,
   },
 ];

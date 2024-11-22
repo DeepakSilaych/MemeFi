@@ -10,7 +10,7 @@ import {
   Campaign,
 } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -22,29 +22,79 @@ const api = axios.create({
 // Token-related endpoints
 export const getTokens = async (): Promise<Token[]> => {
   try {
-    const response = await api.get('/tokens');
-    return response.data;
+    const response = await api.get('/meme-tokens');
+    return response.data.map((token: any) => ({
+      id: token.id,
+      name: token.name,
+      symbol: token.symbol,
+      price: token.currentPrice,
+      description: token.description,
+      imageUrl: token.imageUrl,
+      totalSupply: token.totalSupply,
+      priceChange24h: 0, // To be implemented
+      volume24h: 0, // To be implemented
+      marketCap: token.currentPrice * token.totalSupply,
+    }));
   } catch (error) {
     console.error('Error fetching tokens:', error);
     throw error;
   }
 };
 
-export const getTokenPrice = async (tokenId: string): Promise<number> => {
+export const getTokenDetails = async (id: string): Promise<Token> => {
   try {
-    const response = await api.get(`/tokens/${tokenId}/price`);
-    return response.data.price;
+    const response = await api.get(`/meme-tokens/${id}`);
+    const token = response.data;
+    return {
+      id: token.id,
+      name: token.name,
+      symbol: token.symbol,
+      price: token.currentPrice,
+      description: token.description,
+      imageUrl: token.imageUrl,
+      totalSupply: token.totalSupply,
+      priceChange24h: 0, // To be implemented
+      volume24h: 0, // To be implemented
+      marketCap: token.currentPrice * token.totalSupply,
+      trades: token.trades,
+      liquidityProvisions: token.liquidityProvisions,
+    };
   } catch (error) {
-    console.error('Error fetching token price:', error);
+    console.error('Error fetching token details:', error);
+    throw error;
+  }
+};
+
+export const getTokenPriceHistory = async (id: string, period: string = '24h'): Promise<{ timestamp: string; price: number; }[]> => {
+  try {
+    const response = await api.get(`/meme-tokens/${id}/price-history?period=${period}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching token price history:', error);
     throw error;
   }
 };
 
 // Trade-related endpoints
-export const getTrades = async (): Promise<Trade[]> => {
+export const getTrades = async (userId: string): Promise<Trade[]> => {
   try {
-    const response = await api.get('/trades');
-    return response.data;
+    const response = await api.get(`/trading/positions/${userId}`);
+    const { active, history } = response.data;
+    
+    const mapPosition = (position: any): Trade => ({
+      id: position.id,
+      tokenId: position.token,
+      direction: position.direction.toLowerCase(),
+      timeframe: position.duration,
+      amount: position.amount,
+      status: position.status === 'open' ? 'active' : 'completed',
+      createdAt: position.entry_time,
+      completedAt: position.exit_time,
+      result: position.pnl > 0 ? 'win' : 'loss',
+      pnl: position.pnl,
+    });
+
+    return [...active.map(mapPosition), ...history.map(mapPosition)];
   } catch (error) {
     console.error('Error fetching trades:', error);
     throw error;
@@ -53,10 +103,47 @@ export const getTrades = async (): Promise<Trade[]> => {
 
 export const createTrade = async (trade: CreateTradeRequest): Promise<Trade> => {
   try {
-    const response = await api.post('/trades', trade);
-    return response.data;
+    const response = await api.post('/trading/position/open', {
+      user_id: 'default-user', // TODO: Replace with actual user ID
+      token: trade.tokenId,
+      amount: trade.amount,
+      direction: trade.direction.toUpperCase(),
+      duration: trade.timeframe,
+    });
+    
+    return {
+      id: response.data.id,
+      tokenId: response.data.token,
+      direction: response.data.direction.toLowerCase(),
+      timeframe: response.data.duration,
+      amount: response.data.amount,
+      status: 'active',
+      createdAt: response.data.entry_time,
+    };
   } catch (error) {
     console.error('Error creating trade:', error);
+    throw error;
+  }
+};
+
+export const closeTrade = async (tradeId: string): Promise<Trade> => {
+  try {
+    const response = await api.post(`/trading/position/${tradeId}/close`);
+    
+    return {
+      id: response.data.id,
+      tokenId: response.data.token,
+      direction: response.data.direction.toLowerCase(),
+      timeframe: response.data.duration,
+      amount: response.data.amount,
+      status: 'completed',
+      createdAt: response.data.entry_time,
+      completedAt: response.data.exit_time,
+      result: response.data.pnl > 0 ? 'win' : 'loss',
+      pnl: response.data.pnl,
+    };
+  } catch (error) {
+    console.error('Error closing trade:', error);
     throw error;
   }
 };
@@ -64,8 +151,13 @@ export const createTrade = async (trade: CreateTradeRequest): Promise<Trade> => 
 // Liquidity-related endpoints
 export const getPools = async (): Promise<LiquidityPool[]> => {
   try {
-    const response = await api.get('/pools');
-    return response.data;
+    const response = await api.get('/liquidity/pools');
+    return response.data.map((pool: any) => ({
+      id: pool.id,
+      tokenId: pool.token,
+      liquidity: pool.liquidity,
+      apr: pool.apr,
+    }));
   } catch (error) {
     console.error('Error fetching pools:', error);
     throw error;
@@ -74,7 +166,7 @@ export const getPools = async (): Promise<LiquidityPool[]> => {
 
 export const addLiquidity = async (poolId: string, amount: number): Promise<void> => {
   try {
-    await api.post(`/pools/${poolId}/add`, { amount });
+    await api.post(`/liquidity/pools/${poolId}/add`, { amount });
   } catch (error) {
     console.error('Error adding liquidity:', error);
     throw error;
@@ -83,7 +175,7 @@ export const addLiquidity = async (poolId: string, amount: number): Promise<void
 
 export const removeLiquidity = async (poolId: string, amount: number): Promise<void> => {
   try {
-    await api.post(`/pools/${poolId}/remove`, { amount });
+    await api.post(`/liquidity/pools/${poolId}/remove`, { amount });
   } catch (error) {
     console.error('Error removing liquidity:', error);
     throw error;

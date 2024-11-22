@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400px" height="400px" viewBox="0 0 400 400" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>leap-logo</title>
+    <g id="leap-logo" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <circle id="Oval" fill="#2E3148" cx="200" cy="200" r="200"></circle>
+        <path d="M200,100 C255.228475,100 300,144.771525 300,200 C300,255.228475 255.228475,300 200,300 C144.771525,300 100,255.228475 100,200 C100,144.771525 144.771525,100 200,100 Z M200,140 C166.862915,140 140,166.862915 140,200 C140,233.137085 166.862915,260 200,260 C233.137085,260 260,233.137085 260,200 C260,166.862915 233.137085,140 200,140 Z" id="Combined-Shape" fill="#FFFFFF"></path>
+    </g>
+</svg>

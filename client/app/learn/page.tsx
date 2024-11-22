@@ -19,6 +19,9 @@ import {
   Security,
   SwapHoriz,
   EmojiEvents,
+  Psychology,
+  Diversity3,
+  AutoGraph,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -66,6 +69,27 @@ const learningCategories = [
     path: '/learn/rewards',
     color: '#FFD93D',
   },
+  {
+    title: 'Market Psychology',
+    description: 'Understanding meme coin market sentiment and crowd behavior',
+    icon: Psychology,
+    path: '/learn/market-psychology',
+    color: '#9C27B0',
+  },
+  {
+    title: 'Community Trading',
+    description: 'Learn about social trading and community-driven strategies',
+    icon: Diversity3,
+    path: '/learn/community-trading',
+    color: '#3F51B5',
+  },
+  {
+    title: 'Advanced Analytics',
+    description: 'Master technical analysis and advanced trading indicators',
+    icon: AutoGraph,
+    path: '/learn/advanced-analytics',
+    color: '#00BCD4',
+  },
 ];
 
 const MotionCard = motion(Card);
@@ -99,22 +123,26 @@ export default function LearnPage() {
             <MotionCard
               component={Link}
               href={category.path}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className="glass"
               sx={{
+                p: 3,
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s ease-in-out',
-                cursor: 'pointer',
+                background: 'rgba(23, 25, 35, 0.7)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                transition: 'all 0.3s ease',
+                textDecoration: 'none',
                 '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: `0 8px 24px ${category.color}25`,
+                  transform: 'translateY(-5px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(23, 25, 35, 0.8)',
                 },
               }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
             >
               <Box
                 sx={{
