@@ -1,118 +1,185 @@
-'use client';
-
 import React, { useEffect, useRef } from 'react';
-import { createChart, ColorType, IChartApi } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { Box, useTheme } from '@mui/material';
 
-interface PriceChartProps {
-  data: { time: string; open: number; high: number; low: number; close: number }[];
-  height?: number;
+interface PriceData {
+  time: UTCTimestamp;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
 }
 
-const PriceChart: React.FC<PriceChartProps> = ({ data, height = 400 }) => {
+interface PriceChartProps {
+  data: PriceData[];
+  symbol: string;
+  containerWidth?: number;
+  containerHeight?: number;
+  onCrosshairMove?: (price: number | null) => void;
+}
+
+const PriceChart: React.FC<PriceChartProps> = ({
+  data,
+  symbol,
+  containerWidth = 1000,
+  containerHeight = 600,
+  onCrosshairMove
+}) => {
   const theme = useTheme();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const handleResize = () => {
-      if (chartRef.current && chartContainerRef.current) {
-        chartRef.current.applyOptions({ 
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight
-        });
-      }
-    };
-
-    chartRef.current = createChart(chartContainerRef.current, {
+    // Create chart
+    const chart = createChart(chartContainerRef.current, {
+      width: containerWidth,
+      height: containerHeight,
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: theme.palette.text.secondary,
-        fontFamily: theme.typography.fontFamily,
+        background: { color: theme.palette.background.paper },
+        textColor: theme.palette.text.primary,
       },
-      width: chartContainerRef.current.clientWidth,
-      height: chartContainerRef.current.clientHeight,
       grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        vertLines: { color: theme.palette.divider },
+        horzLines: { color: theme.palette.divider },
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: theme.palette.primary.main,
           width: 1,
-          style: 3,
-          labelBackgroundColor: theme.palette.background.paper,
+          color: theme.palette.primary.main,
+          style: 2,
         },
         horzLine: {
-          color: theme.palette.primary.main,
           width: 1,
-          style: 3,
-          labelBackgroundColor: theme.palette.background.paper,
+          color: theme.palette.primary.main,
+          style: 2,
         },
       },
       timeScale: {
-        borderColor: 'rgba(255, 255, 255, 0.1)',
         timeVisible: true,
         secondsVisible: false,
-        barSpacing: 12,
+        borderColor: theme.palette.divider,
       },
       rightPriceScale: {
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: theme.palette.divider,
         scaleMargins: {
           top: 0.1,
-          bottom: 0.1,
+          bottom: 0.2,
         },
       },
-      handleScroll: {
-        mouseWheel: true,
-        pressedMouseMove: true,
-        horzTouchDrag: true,
-        vertTouchDrag: true,
-      },
-      handleScale: {
-        axisPressedMouseMove: true,
-        mouseWheel: true,
-        pinch: true,
-      },
     });
 
-    const candlestickSeries = chartRef.current.addCandlestickSeries({
-      upColor: '#4CAF50',
-      downColor: '#f44336',
+    // Create candlestick series
+    const candlestickSeries = chart.addCandlestickSeries({
+      upColor: theme.palette.success.main,
+      downColor: theme.palette.error.main,
       borderVisible: false,
-      wickUpColor: '#4CAF50',
-      wickDownColor: '#f44336',
+      wickUpColor: theme.palette.success.main,
+      wickDownColor: theme.palette.error.main,
     });
 
-    candlestickSeries.setData(data);
+    // Create volume series
+    const volumeSeries = chart.addHistogramSeries({
+      color: theme.palette.primary.main,
+      priceFormat: {
+        type: 'volume',
+      },
+      priceScaleId: 'volume',
+      scaleMargins: {
+        top: 0.8,
+        bottom: 0,
+      },
+    });
 
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Initial resize
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (chartRef.current) {
-        chartRef.current.remove();
+    // Set up crosshair move handler
+    chart.subscribeCrosshairMove((param) => {
+      if (onCrosshairMove) {
+        const price = param.seriesPrices.get(candlestickSeries)?.close;
+        onCrosshairMove(price || null);
       }
+    });
+
+    // Store references
+    chartRef.current = chart;
+    candlestickSeriesRef.current = candlestickSeries;
+    volumeSeriesRef.current = volumeSeries;
+
+    // Set initial data
+    candlestickSeries.setData(data);
+    volumeSeries.setData(
+      data.map(d => ({
+        time: d.time,
+        value: d.volume || 0,
+        color: d.close >= d.open ? theme.palette.success.main : theme.palette.error.main,
+      }))
+    );
+
+    // Fit content
+    chart.timeScale().fitContent();
+
+    // Cleanup
+    return () => {
+      chart.remove();
     };
-  }, [theme, height, data]);
+  }, [theme]); // Only recreate chart on theme changes
+
+  // Update data when it changes
+  useEffect(() => {
+    if (!candlestickSeriesRef.current || !volumeSeriesRef.current || !chartRef.current) return;
+
+    candlestickSeriesRef.current.setData(data);
+    volumeSeriesRef.current.setData(
+      data.map(d => ({
+        time: d.time,
+        value: d.volume || 0,
+        color: d.close >= d.open ? theme.palette.success.main : theme.palette.error.main,
+      }))
+    );
+
+    // Fit content after data update
+    chartRef.current.timeScale().fitContent();
+  }, [data, theme]);
+
+  // Update size when dimensions change
+  useEffect(() => {
+    if (!chartRef.current) return;
+    chartRef.current.applyOptions({
+      width: containerWidth,
+      height: containerHeight,
+    });
+    chartRef.current.timeScale().fitContent();
+  }, [containerWidth, containerHeight]);
 
   return (
-    <Box 
-      ref={chartContainerRef} 
-      sx={{ 
+    <Box
+      sx={{
         width: '100%',
         height: '100%',
-        minHeight: height,
-        '.tv-lightweight-charts': {
-          borderRadius: 1,
-          background: 'rgba(255,255,255,0.02)',
-        }
-      }} 
-    />
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        minHeight: containerHeight,
+      }}
+    >
+      <Box
+        ref={chartContainerRef}
+        sx={{
+          width: containerWidth,
+          height: containerHeight,
+          position: 'absolute',
+          '& .tv-lightweight-charts': {
+            borderRadius: 1,
+            overflow: 'hidden',
+          },
+        }}
+      />
+    </Box>
   );
 };
 

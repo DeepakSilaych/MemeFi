@@ -1,19 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
-  Card,
-  Grid,
-  Typography,
-  useTheme,
-  Stack,
-  LinearProgress,
-  IconButton,
   Button,
-  Tooltip,
-  Tabs,
-  Tab,
+  Card,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Typography,
   Table,
   TableBody,
   TableCell,
@@ -21,21 +20,39 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Avatar,
-  Badge,
-  Link as MuiLink,
+  Stack,
+  Grid,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
+  IconButton,
   InputAdornment,
   Slider,
   Switch,
   FormControlLabel,
+  CardContent,
+  Avatar,
+  Tooltip,
+  LinearProgress,
+  Tab,
+  Tabs
 } from '@mui/material';
+
+// Material Icons
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import ShareIcon from '@mui/icons-material/Share';
+import HistoryIcon from '@mui/icons-material/History';
+import LockIcon from '@mui/icons-material/Lock';
+import SecurityIcon from '@mui/icons-material/Security';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import BarChartIcon from '@mui/icons-material/BarChart';
+
+// Framer Motion
 import { motion } from 'framer-motion';
+
+// Recharts
 import {
   AreaChart,
   Area,
@@ -44,28 +61,51 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
   BarChart,
   Bar,
   Legend,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
-import { useWallet } from '../context/WalletContext';
-import { getTokens, getTrades, createTrade, closeTrade } from '../services/api';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import ShareIcon from '@mui/icons-material/Share';
-import HistoryIcon from '@mui/icons-material/History';
-import LockIcon from '@mui/icons-material/Lock';
-import SecurityIcon from '@mui/icons-material/Security';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import Info from '@mui/icons-material/Info';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import Link from 'next/link';
 
+// Custom Components
+import TokenList from '../components/TokenList';
+import PortfolioOverview from '../components/PortfolioOverview';
+import TradingDashboard from '../components/TradingDashboard';
+
+// Hooks and Context
+import { useWallet } from '../context/WalletContext';
+
+// Utils
+import { formatCurrency, formatNumber, formatPercent, formatDateTime } from '../../src/utils/formatters';
+
+// Types
+interface MemeToken {
+  id: string;
+  name: string;
+  symbol: string;
+  price: number;
+  priceChange24h: number;
+  volume24h: number;
+  marketCap: number;
+  image: string;
+  market_cap_rank?: number;
+}
+
+interface MarketOverview {
+  total_market_cap: number;
+  total_volume_24h: number;
+  average_price_change_24h: number;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+// Motion Components
 const MotionCard = motion(Card);
 
 // Mock data for charts
@@ -197,33 +237,6 @@ const walletBalances = {
   DAI: 2000,
 };
 
-const [tokens, setTokens] = useState<MemeToken[]>([]);
-const [overview, setOverview] = useState<MarketOverview | null>(null);
-const [loading, setLoading] = useState(true);
-
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [tokenList, marketOverview] = await Promise.all([
-        apiService.getTokenList(),
-        apiService.getMarketOverview(),
-      ]);
-      setTokens(tokenList);
-      setOverview(marketOverview);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, []);
-
-if (loading) {
-  return (<div className="flex items-center justify-center min-h-screen">Loading...</div>);
-}
-
 export default function DashboardPage() {
   const theme = useTheme();
   const { address, isConnected, isConnecting, connect } = useWallet();
@@ -234,6 +247,81 @@ export default function DashboardPage() {
   const [lockDuration, setLockDuration] = useState(7);
   const [trades, setTrades] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [tokens, setTokens] = useState([]);
+  const [overview, setOverview] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  const handleOpenDeposit = (vault) => {
+    setSelectedVault(vault);
+  };
+
+  const handleCloseDeposit = () => {
+    setSelectedVault(null);
+    setDepositAmount('');
+    setIsAutoCompound(true);
+    setLockDuration(7);
+  };
+
+  const handleDepositSubmit = () => {
+    // TODO: Implement deposit logic
+    console.log('Deposit:', {
+      vault: selectedVault?.name,
+      amount: depositAmount,
+      autoCompound: isAutoCompound,
+      lockDuration,
+    });
+    handleCloseDeposit();
+  };
+
+  const calculateProjectedReturns = () => {
+    if (!depositAmount || !selectedVault) return 0;
+    const amount = parseFloat(depositAmount);
+    const apy = parseFloat(selectedVault.apy);
+    const years = lockDuration / 365;
+    const compoundFrequency = isAutoCompound ? 365 : 1;
+    
+    // Compound interest formula: A = P(1 + r/n)^(nt)
+    const projectedAmount = amount * Math.pow(1 + (apy/100)/compoundFrequency, compoundFrequency * years);
+    return projectedAmount - amount;
+  };
+
+  const getRiskColor = (risk) => {
+    switch (risk.toLowerCase()) {
+      case 'very low':
+        return 'success';
+      case 'low':
+        return 'info';
+      case 'medium':
+        return 'warning';
+      case 'high':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [tokenList, marketOverview] = await Promise.all([
+          getTokens(),
+          getTokens(),
+        ]);
+        setTokens(tokenList);
+        setOverview(marketOverview);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -350,76 +438,23 @@ export default function DashboardPage() {
 
   const stats = calculateStats();
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const handleOpenDeposit = (vault) => {
-    setSelectedVault(vault);
-  };
-
-  const handleCloseDeposit = () => {
-    setSelectedVault(null);
-    setDepositAmount('');
-    setIsAutoCompound(true);
-    setLockDuration(7);
-  };
-
-  const handleDepositSubmit = () => {
-    // TODO: Implement deposit logic
-    console.log('Deposit:', {
-      vault: selectedVault?.name,
-      amount: depositAmount,
-      autoCompound: isAutoCompound,
-      lockDuration,
-    });
-    handleCloseDeposit();
-  };
-
-  const calculateProjectedReturns = () => {
-    if (!depositAmount || !selectedVault) return 0;
-    const amount = parseFloat(depositAmount);
-    const apy = parseFloat(selectedVault.apy);
-    const years = lockDuration / 365;
-    const compoundFrequency = isAutoCompound ? 365 : 1;
-    
-    // Compound interest formula: A = P(1 + r/n)^(nt)
-    const projectedAmount = amount * Math.pow(1 + (apy/100)/compoundFrequency, compoundFrequency * years);
-    return projectedAmount - amount;
-  };
-
-  const getRiskColor = (risk) => {
-    switch (risk.toLowerCase()) {
-      case 'very low':
-        return 'success';
-      case 'low':
-        return 'info';
-      case 'medium':
-        return 'warning';
-      case 'high':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h4" className="gradient-text">
           Dashboard
         </Typography>
-        <Button
-          component={Link}
-          href="/learn/trading-strategies"
-          variant="outlined"
-          sx={{
-            borderColor: 'rgba(255,255,255,0.1)',
-            '&:hover': { borderColor: 'rgba(255,255,255,0.2)' },
-          }}
-        >
-          Trading Guide
-        </Button>
+        <Link href="/learn/trading-strategies" passHref style={{ textDecoration: 'none' }}>
+          <Button
+            variant="outlined"
+            sx={{
+              borderColor: 'rgba(255,255,255,0.1)',
+              '&:hover': { borderColor: 'rgba(255,255,255,0.2)' },
+            }}
+          >
+            Trading Guide
+          </Button>
+        </Link>
       </Stack>
 
       {/* Stats Grid */}
@@ -854,12 +889,12 @@ export default function DashboardPage() {
               <Table>
                 <TableHead>
                   <TableRow>
+                    <TableCell>Rank</TableCell>
                     <TableCell>Token</TableCell>
-                    <TableCell align="right">Price</TableCell>
-                    <TableCell align="right">24h Change</TableCell>
-                    <TableCell align="right">Volume (24h)</TableCell>
-                    <TableCell align="right">Market Cap</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>Price</TableCell>
+                    <TableCell>24h Change</TableCell>
+                    <TableCell>Market Cap</TableCell>
+                    <TableCell>Volume (24h)</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -878,6 +913,7 @@ export default function DashboardPage() {
                   ) : (
                     tokens.map((token) => (
                       <TableRow key={token.id}>
+                        <TableCell>{token.market_cap_rank}</TableCell>
                         <TableCell>
                           <Stack direction="row" alignItems="center" spacing={2}>
                             {token.imageUrl ? (
@@ -893,32 +929,14 @@ export default function DashboardPage() {
                             </Stack>
                           </Stack>
                         </TableCell>
-                        <TableCell align="right">
-                          ${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                        <TableCell>${token.price.toFixed(4)}</TableCell>
+                        <TableCell>
+                          <span className={token.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}>
+                            {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
+                          </span>
                         </TableCell>
-                        <TableCell align="right">
-                          <Typography
-                            color={token.priceChange24h >= 0 ? 'success.main' : 'error.main'}
-                          >
-                            {token.priceChange24h >= 0 ? '+' : ''}
-                            {token.priceChange24h.toFixed(2)}%
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          ${token.volume24h.toLocaleString()}
-                        </TableCell>
-                        <TableCell align="right">
-                          ${token.marketCap.toLocaleString()}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => {/* Handle trade action */}}
-                          >
-                            Trade
-                          </Button>
-                        </TableCell>
+                        <TableCell>${(token.marketCap / 1000000).toFixed(2)}M</TableCell>
+                        <TableCell>${(token.volume24h / 1000000).toFixed(2)}M</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -1244,10 +1262,17 @@ export default function DashboardPage() {
               <Box sx={{ p: 3 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                   <Typography variant="h6">Rewards</Typography>
-                  <MuiLink href="/learn/rewards" underline="hover" sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Info sx={{ mr: 0.5, fontSize: 16 }} />
-                    <Typography variant="body2">Rewards Guide</Typography>
-                  </MuiLink>
+                  <Link href="/learn/rewards" passHref style={{ textDecoration: 'none' }}>
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        '&:hover': { borderColor: 'rgba(255,255,255,0.2)' },
+                      }}
+                    >
+                      Rewards Guide
+                    </Button>
+                  </Link>
                 </Stack>
                 <Stack spacing={2}>
                   <Box>
@@ -1376,70 +1401,35 @@ export default function DashboardPage() {
         </Grid>
       )}
       {overview && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground">Total Market Cap</h3>
-              <p className="text-2xl font-bold">${formatNumber(overview.total_market_cap)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground">24h Volume</h3>
-              <p className="text-2xl font-bold">${formatNumber(overview.total_volume_24h)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground">Average 24h Change</h3>
-              <p className={`text-2xl font-bold ${overview.average_price_change_24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {formatPercent(overview.average_price_change_24h)}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Total Market Cap</Typography>
+                <Typography variant="h4">${formatNumber(overview.total_market_cap)}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>24h Volume</Typography>
+                <Typography variant="h4">${formatNumber(overview.total_volume_24h)}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Average 24h Change</Typography>
+                <Typography variant="h4" className={overview.average_price_change_24h >= 0 ? 'text-green-500' : 'text-red-500'}>
+                  {formatPercent(overview.average_price_change_24h)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       )}
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-2xl font-bold mb-4">Top Meme Tokens</h2>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>Token</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">24h Change</TableHead>
-                  <TableHead className="text-right">Market Cap</TableHead>
-                  <TableHead className="text-right">Volume (24h)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tokens.map((token) => (
-                  <TableRow key={token.id}>
-                    <TableCell>{token.market_cap_rank}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <img src={token.image} alt={token.name} className="w-6 h-6 rounded-full" />
-                        <div>
-                          <div className="font-medium">{token.name}</div>
-                          <div className="text-sm text-muted-foreground">{token.symbol}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">${formatNumber(token.current_price)}</TableCell>
-                    <TableCell className={`text-right ${token.price_change_24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {formatPercent(token.price_change_24h)}
-                    </TableCell>
-                    <TableCell className="text-right">${formatNumber(token.market_cap)}</TableCell>
-                    <TableCell className="text-right">${formatNumber(token.volume_24h)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
     </Box>
   );
 }
